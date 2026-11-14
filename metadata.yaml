@@ -1,0 +1,25 @@
+name: astrbot_plugin_dual_persona
+display_name: 双人格热切换
+short_desc: 一体双生——在两个人格之间自由切换，共享全部回忆。
+desc: >
+  为 AstrBot 提供「双人格热切换」能力。
+  
+  ## 核心理念
+  一体双生，共用记忆。两个人格共享同一份聊天上下文，切换时不清空
+  历史记录，实现真正意义上的内在对话连续性。
+  
+  ## 使用方式
+  - `/切换人格` —— 打开人格选择菜单，点击按钮即可切换
+  - `/切换人格 <人格名>` —— 直接切换到指定人格
+  - `/人格列表` —— 查看当前可用的人格
+  
+  ## 自定义人格
+  在 WebUI「插件配置」页面中，你可以自由编辑两个人格的名称、
+  系统提示词（system_prompt），打造专属于你的双面 AI。
+version: 1.4.3
+author: DSH
+repo: https://github.com/user/astrbot_plugin_dual_persona
+tags:
+  - persona
+  - roleplay
+  - dual-personality

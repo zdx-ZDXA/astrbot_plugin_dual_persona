@@ -1,0 +1,73 @@
+{
+  "persona_a_id": {
+    "description": "人格 A — 在 AstrBot 已配置的人设中选择第一个",
+    "type": "string",
+    "default": "",
+    "hint": "从 AstrBot 人格管理中选择一个已创建的人设作为「人格 A」",
+    "_special": "select_persona"
+  },
+  "persona_b_id": {
+    "description": "人格 B — 在 AstrBot 已配置的人设中选择第二个",
+    "type": "string",
+    "default": "",
+    "hint": "从 AstrBot 人格管理中选择一个已创建的人设作为「人格 B」",
+    "_special": "select_persona"
+  },
+  "admin_uids": {
+    "description": "管理员 QQ/UID 列表",
+    "type": "string",
+    "default": "",
+    "hint": "请输入管理员账号ID，多个ID用英文逗号分隔，如：123456,789012"
+  },
+  "switch_lines_mode": {
+    "description": "切换人格时是否播放过场台词",
+    "type": "string",
+    "default": "personalized",
+    "options": ["none", "default", "personalized", "custom"],
+    "labels": ["无过场", "默认模板", "作者专属模板", "自定义台词"],
+    "hint": "选择切换时的台词模式"
+  },
+  "enable_author_template": {
+    "description": "启用作者专属模板",
+    "type": "bool",
+    "default": true,
+    "hint": "启用后，切换台词将使用为您定制的作者专属模板"
+  },
+  "switch_lines": {
+    "description": "自定义切换台词（仅在「自定义台词」模式下生效）",
+    "type": "dict",
+    "hint": "key 为 AstrBot 人格名，value 为该人格的退场语和登场语。",
+    "template_schema": {
+      "exit_line": {
+        "name": "退场语",
+        "description": "该人格被切换走时说的话",
+        "type": "text",
+        "default": "{name}先退下了，{next_name}会陪您的。"
+      },
+      "enter_line": {
+        "name": "登场语",
+        "description": "该人格被切换进来时说的话",
+        "type": "text",
+        "default": "{name}来啦~"
+      }
+    }
+  },
+  "natural_handoff": {
+    "description": "启用自然接管提示",
+    "type": "bool",
+    "default": true,
+    "hint": "切换后首次 LLM 请求时，自动注入一次性提示，让新人格自然接管对话。"
+  },
+  "switch_trigger_suffix": {
+    "description": "快捷切换指令触发后缀",
+    "type": "string",
+    "default": "来了",
+    "hint": "例如填「来了」，则输入「/人格名来了」或「/人格名 来了」可快捷切换人格。"
+  },
+  "suppress_thought_in_groups": {
+    "description": "群聊中抑制思维链显示",
+    "type": "bool",
+    "default": true,
+    "hint": "开启后，群聊中不再显示思维链（thought）信息，保持简洁"
+  }
+}

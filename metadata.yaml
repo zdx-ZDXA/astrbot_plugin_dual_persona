@@ -40,7 +40,7 @@ desc: >
   切换台词与管理员名单。
 version: 3.1.0
 author: DSH
-repo: https://github.com/user/astrbot_plugin_dual_persona
+repo: https://github.com/zdx-ZDXA/astrbot_plugin_dual_persona
 tags:
   - persona
   - roleplay

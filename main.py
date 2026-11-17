@@ -8,7 +8,7 @@ v3.1.0 新增：
 - 面板分二级：主控（只读总览）+ 设置（可直接在面板里改配置并保存）
 
 v3.0.1 修复：
-- 衰减永不触发（sweep 每次重置时间戳，凑不满 10 分钟）→ 小汐会一直下不来
+- 衰减永不触发（sweep 每次重置时间戳，凑不满 10 分钟）→ 切到人格 B 后会一直下不来
 - 无人说话时人格不回退 → 加每 5 分钟闲置扫描
 - 单字情绪词（烦/累/闷）被忽略 → allow_single_char_words 开关，默认允许
 
@@ -126,10 +126,10 @@ class DualPersona(Star):
 
         # 强词：命中立即切换，不受冷却限制
         self._strong_words_to_b: list = cfg.get(
-            "strong_words_to_b", ["小汐", "汐姐", "姐姐出来"]
+            "strong_words_to_b", ["姐姐", "姐姐出来"]
         ) or []
         self._strong_words_to_a: list = cfg.get(
-            "strong_words_to_a", ["小澜", "妹妹回来", "换回小澜"]
+            "strong_words_to_a", ["妹妹", "换回来"]
         ) or []
         # 弱词：需要命中 weak_need 个才切换
         try:

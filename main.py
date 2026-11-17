@@ -66,7 +66,7 @@ _QUESTION_TAILS = ("吗", "吧", "呢", "么")
 
 # 模型自主切换标记：[[switch:a]] / [[switch:b]]
 _SWITCH_MARKER = re.compile(r"\[\[\s*switch\s*[:：]\s*([abAB])\s*\]\]", re.I)
-PLUGIN_VERSION = "3.1.2"
+PLUGIN_VERSION = "3.1.3"
 
 try:  # astrbot.api.web 只在较新版本提供，缺失时只影响状态面板
     from astrbot.api.web import error_response, json_response, request  # noqa: F401
@@ -248,6 +248,13 @@ class DualPersona(Star):
             if len(self._sessions) >= 1000:      # 防止无限增长
                 self._sessions.clear()
             self._sessions[key] = st
+        # 自愈：manual 标记只对「锁定在 B」有意义。
+        # 旧版本可能留下 manual=True 但 key=A 的脏状态，会把深夜规则永久挡住。
+        if st.get("manual") and st.get("key") != "b":
+            st["manual"] = False
+            logger.debug(
+                f"[DualPersona] 自愈：{key} 的 manual 指向人格 A，已解除锁定"
+            )
         st["updated"] = time.time()
         return st
 
@@ -676,7 +683,10 @@ class DualPersona(Star):
                 # 只记录「这一夜已处理过」，绝不重置 manual —— 手动选择永久优先
                 st["night_tag"] = tag
             if st["manual"]:
-                logger.debug("[DualPersona] 深夜规则跳过：用户已手动选择人格")
+                logger.debug(
+                    "[DualPersona] 深夜规则跳过：用户已手动锁定在 "
+                    f"{self._get_persona_name(st['key'])}"
+                )
             elif st["key"] == self._night_target:
                 # 已在目标人格：不碰数值、不设驻留，避免自己触发自己
                 pass
@@ -862,7 +872,8 @@ class DualPersona(Star):
             f"• 提示词占用：约 {st.get('metrics', {}).get('total_tokens', 0)} tokens"
             f"（人设 {st.get('metrics', {}).get('persona_tokens', 0)}"
             f" + 状态 {st.get('metrics', {}).get('state_tokens', 0)}）\n"
-            f"• 深夜模式：{night_line}\n"
+            f"• 深夜模式：{night_line}"
+            f"{'（当前已在该人格，无需切换）' if is_night and st['key'] == self._night_target else ''}\n"
             f"• 手动切换：{manual}\n"
             f"• 自然接管提示：{handoff}\n"
             f"• AI 自知（提示词注入）：{aware}\n"

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>双人格热切换</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <nav class="tabs">
+      <button class="tab active" data-view="overview" type="button">主控</button>
+      <button class="tab" data-view="settings" type="button">设置</button>
+      <span class="grow"></span>
+      <button id="refresh" class="ghost" type="button">刷新</button>
+    </nav>
+
+    <!-- ===== 主控：只读 ===== -->
+    <main id="view-overview" class="view">
+      <header class="bar">
+        <div>
+          <h1>主控</h1>
+          <p class="sub" id="subtitle">正在读取…</p>
+        </div>
+        <span class="ro-badge">只读</span>
+      </header>
+
+      <section class="grid" id="personas"></section>
+
+      <section class="card">
+        <h2>情绪数值（刺激累积）</h2>
+        <div id="satiety"></div>
+      </section>
+
+      <section class="card budget-card">
+        <h2>提示词占用（估算）</h2>
+        <div class="metrics" id="budget"></div>
+        <p class="note">中文按 0.75 token/字估算，与真实分词器差 ±10%，只看大小不必当账单。</p>
+      </section>
+
+      <section class="card">
+        <h2>生效设置</h2>
+        <table class="kv" id="config"></table>
+      </section>
+
+      <section class="card">
+        <h2>会话与当前人格</h2>
+        <table class="list" id="sessions"></table>
+        <p class="note" id="note"></p>
+      </section>
+    </main>
+
+    <!-- ===== 设置：可编辑 ===== -->
+    <main id="view-settings" class="view" hidden>
+      <header class="bar">
+        <div>
+          <h1>设置</h1>
+          <p class="sub">修改后立即生效，会写入插件配置文件。</p>
+        </div>
+        <button id="save" type="button">保存</button>
+      </header>
+
+      <p class="err" id="save-msg" hidden></p>
+
+      <section class="card">
+        <h2>人格与范围</h2>
+        <div class="form" id="form-core"></div>
+      </section>
+
+      <section class="card">
+        <h2>情绪数值</h2>
+        <p class="note">刺激累积到阈值才激发出另一面；驻留期内不衰减。</p>
+        <div class="form" id="form-satiety"></div>
+      </section>
+
+      <section class="card">
+        <h2>深夜与判定</h2>
+        <div class="form" id="form-night"></div>
+      </section>
+
+      <section class="card">
+        <h2>提示与显示</h2>
+        <div class="form" id="form-prompt"></div>
+      </section>
+
+      <p class="note">
+        人格选择（哪两个人设）请到 <b>插件配置</b> 页修改；本页只调运行参数。
+      </p>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

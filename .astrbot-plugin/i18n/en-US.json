@@ -1,0 +1,8 @@
+{
+  "views": {
+    "status": {
+      "title": "Status",
+      "description": "Live view of the active persona, effective settings and per-session persona state."
+    }
+  }
+}

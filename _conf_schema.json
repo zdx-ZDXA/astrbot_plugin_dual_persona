@@ -1,42 +1,266 @@
 {
   "persona_a_id": {
-    "description": "人格 A — 在 AstrBot 已配置的人设中选择第一个",
+    "description": "人格 A — 从 AstrBot 已配置的人设中选择",
     "type": "string",
     "default": "",
     "hint": "从 AstrBot 人格管理中选择一个已创建的人设作为「人格 A」",
     "_special": "select_persona"
   },
   "persona_b_id": {
-    "description": "人格 B — 在 AstrBot 已配置的人设中选择第二个",
+    "description": "人格 B — 从 AstrBot 已配置的人设中选择",
     "type": "string",
     "default": "",
     "hint": "从 AstrBot 人格管理中选择一个已创建的人设作为「人格 B」",
     "_special": "select_persona"
   },
+  "strong_words_to_b": {
+    "description": "强词：命中立即切到人格 B",
+    "type": "list",
+    "default": [
+      "小汐",
+      "汐姐",
+      "姐姐出来"
+    ],
+    "item_type": "string",
+    "hint": "命中就切，不管冷却、不需要凑数。用于「你叫她就出来」的显式指令。"
+  },
+  "strong_words_to_a": {
+    "description": "强词：命中立即切到人格 A",
+    "type": "list",
+    "default": [
+      "小澜",
+      "妹妹回来",
+      "换回小澜"
+    ],
+    "item_type": "string",
+    "hint": "命中就切，建议只放明确叫名字的说法。"
+  },
+  "weak_need": {
+    "description": "弱词要命中几个才切换",
+    "type": "int",
+    "default": 2,
+    "hint": "1 = 命中一个就切（最灵敏，也最容易误判）；2 = 一条消息里至少两个词；3 = 很保守。"
+  },
+  "satiety_enabled": {
+    "description": "启用情绪数值（刺激累积）",
+    "type": "bool",
+    "default": true,
+    "hint": "开启后弱词不再命中即切，而是加分；满格才激发出另一面。关闭则回到「命中即切」。"
+  },
+  "satiety_threshold": {
+    "description": "激发阈值",
+    "type": "int",
+    "default": 100,
+    "hint": "情绪值到这个数才切人格。"
+  },
+  "satiety_weak_add": {
+    "description": "每个弱词加多少分",
+    "type": "int",
+    "default": 25,
+    "hint": "25 = 四个词满格。想更敏感调高，想更麻木调低。"
+  },
+  "satiety_mood_add": {
+    "description": "同向情绪词加多少分",
+    "type": "int",
+    "default": 5,
+    "hint": "已经在该人格时，命中弱词只加这一点，用于维持。"
+  },
+  "allow_single_char_words": {
+    "description": "允许单字情绪词（烦/累/闷）",
+    "type": "bool",
+    "default": true,
+    "hint": "开启后「烦」「累」「闷」这类单字也能加分。关闭则只认两字以上的词，误判更少但日常情绪基本抓不到。"
+  },
+  "satiety_decay_msg": {
+    "description": "每条消息自然衰减",
+    "type": "int",
+    "default": 1,
+    "hint": "不聊就不涨，聊着也会慢慢降。0 = 不按条衰减。"
+  },
+  "satiety_decay_10min": {
+    "description": "每 10 分钟衰减",
+    "type": "int",
+    "default": 10,
+    "hint": "闲置越久掉得越多。0 = 不按时间衰减。"
+  },
+  "satiety_release": {
+    "description": "回落阈值",
+    "type": "int",
+    "default": 20,
+    "hint": "人格 B 状态下，驻留期满且数值掉到这个数以下，自动回到人格 A。"
+  },
+  "min_dwell_min": {
+    "description": "最短驻留（分钟）",
+    "type": "int",
+    "default": 20,
+    "hint": "切过去后至少待这么久，期间不衰减；驻留内叫强词会重置计时。0 = 不驻留。"
+  },
+  "satiety_show_in_prompt": {
+    "description": "把情绪值告诉模型",
+    "type": "bool",
+    "default": false,
+    "hint": "开启后状态块里多一句「情绪 60/100」，她能感到临界感；约多 12 tokens。"
+  },
+  "switch_cooldown_min": {
+    "description": "弱词冷却（分钟）",
+    "type": "int",
+    "default": 10,
+    "hint": "弱词触发切换后，这段时间内弱词不再触发反向切换，避免来回跳。强词不受限制。0 = 关闭冷却。"
+  },
+  "trigger_words_a": {
+    "description": "弱词：命中后切到人格 B（交叉语义）",
+    "type": "list",
+    "default": [],
+    "item_type": "string",
+    "hint": "默认留空。建议只放「真崩」级别的词：撑不住、受不了了、想哭、崩溃、好想消失。日常词（难过、委屈、好累）会被否定/疑问过滤挡掉一部分，但仍容易误判。"
+  },
+  "trigger_words_b": {
+    "description": "弱词：命中后切到人格 A（交叉语义）",
+    "type": "list",
+    "default": [],
+    "item_type": "string",
+    "hint": "默认留空。命中的词会切到人格 A。"
+  },
+  "night_start_time": {
+    "description": "深夜开始时间",
+    "type": "string",
+    "default": "23:00",
+    "hint": "深夜模式开始时间（24 小时制）。深夜期间倾向停留在人格 A，每个夜间区间只自动切换一次，不会覆盖你当晚的手动切换。"
+  },
+  "night_end_time": {
+    "description": "深夜结束时间",
+    "type": "string",
+    "default": "04:00",
+    "hint": "深夜模式结束时间（24 小时制），可跨天。"
+  },
+  "night_target": {
+    "description": "深夜时段倾向哪个人格",
+    "type": "string",
+    "default": "a",
+    "options": [
+      "a",
+      "b"
+    ],
+    "labels": [
+      "人格 A",
+      "人格 B"
+    ],
+    "hint": "进入深夜区间时自动切到这个人格，每次夜里只切一次，不会覆盖你当晚的手动切换。"
+  },
+  "auto_switch_enabled": {
+    "description": "启用自动切换",
+    "type": "bool",
+    "default": true,
+    "hint": "启用后按情绪词和深夜时间自动切换人格"
+  },
+  "manual_switch_enabled": {
+    "description": "启用手动切换",
+    "type": "bool",
+    "default": true,
+    "hint": "启用后支持 /切换人格 与 /<人格名>来了 快捷切换"
+  },
+  "state_scope": {
+    "description": "人格作用范围",
+    "type": "string",
+    "default": "global",
+    "options": [
+      "global",
+      "session"
+    ],
+    "labels": [
+      "全局互通（群聊与私聊共用）",
+      "按会话隔离"
+    ],
+    "hint": "全局互通：在群里切成 A，私聊也变成 A，所有人格状态只有一份；按会话隔离：每个群、每个私聊各自独立。"
+  },
+  "auto_switch_admin_only": {
+    "description": "关键词自动切换仅管理员消息生效",
+    "type": "bool",
+    "default": true,
+    "hint": "开启后，只有管理员发的消息里的触发词会改变人格；普通用户说「抱抱」「委屈」不会切换。深夜时间切换不受此限制。"
+  },
+  "llm_switch_enabled": {
+    "description": "让模型自己判断该不该换人格",
+    "type": "bool",
+    "default": false,
+    "hint": "开启后，模型可以在回复末尾输出 [[switch:a]] 或 [[switch:b]]，插件会剥掉这个标记并真正切换人格。不输出就不切。"
+  },
+  "llm_switch_rules": {
+    "description": "换人判断规则（写给模型看的）",
+    "type": "text",
+    "default": "宝宝情绪明显崩了、说想被抱、反复确认安全感时，让姐姐（人格 B）出来；他缓过来、说要自己待一会儿、或主动叫妹妹名字时，换回人格 A。",
+    "hint": "这段会原样插进每轮的系统提示词，模型据此决定要不要输出切换标记。写「什么时候」比写「谁是谁」更有效。"
+  },
   "admin_uids": {
     "description": "管理员 QQ/UID 列表",
     "type": "string",
     "default": "",
-    "hint": "请输入管理员账号ID，多个ID用英文逗号分隔，如：123456,789012"
+    "hint": "只有这些账号可以手动切换人格。多个 ID 用英文逗号分隔，如：123456,789012。留空则回退到 AstrBot 全局管理员（admins_id）。"
+  },
+  "self_aware": {
+    "description": "让模型知道自己当前的人格和设置",
+    "type": "bool",
+    "default": true,
+    "hint": "开启后每轮请求会追加一小段「运行状态」，模型能准确回答「你现在是谁 / 当前设置是什么」。约增加 100–200 tokens 提示词。"
+  },
+  "self_aware_include_triggers": {
+    "description": "状态块中附带触发词列表",
+    "type": "bool",
+    "default": false,
+    "hint": "开启后模型也知道哪些词会触发自动切换；词组较长时会额外消耗提示词。"
+  },
+  "self_aware_compact": {
+    "description": "状态块压缩成一行（省 token）",
+    "type": "bool",
+    "default": true,
+    "hint": "开：约 40 tokens，只写「你是谁 / 另一面是谁 / 深夜倾向」。关：完整 6~7 行，约 150 tokens。"
   },
   "switch_lines_mode": {
     "description": "切换人格时是否播放过场台词",
     "type": "string",
-    "default": "personalized",
-    "options": ["none", "default", "personalized", "custom"],
-    "labels": ["无过场", "默认模板", "作者专属模板", "自定义台词"],
-    "hint": "选择切换时的台词模式"
+    "default": "default",
+    "options": [
+      "none",
+      "default",
+      "personalized",
+      "custom"
+    ],
+    "labels": [
+      "无过场",
+      "默认模板",
+      "备选模板",
+      "自定义台词"
+    ],
+    "hint": "「备选模板」是内置的另一套措辞，与你的具体人设设定无关；想贴合人设请用「自定义台词」。"
   },
-  "enable_author_template": {
-    "description": "启用作者专属模板",
-    "type": "bool",
-    "default": true,
-    "hint": "启用后，切换台词将使用为您定制的作者专属模板"
+  "switch_notice_mode": {
+    "description": "切换人格后发一条状态提示",
+    "type": "string",
+    "default": "auto_only",
+    "options": [
+      "off",
+      "auto_only",
+      "manual_only",
+      "always"
+    ],
+    "labels": [
+      "不发",
+      "仅自动切换时",
+      "仅手动切换时",
+      "每次都发"
+    ],
+    "hint": "用主动消息发送，不会进入对话历史、不影响上下文。手动切换已有过场台词，所以默认只在自动切换时提示。"
+  },
+  "switch_notice_template": {
+    "description": "状态提示文案",
+    "type": "string",
+    "default": "— 现在为「{name}」（人格 {key}）",
+    "hint": "可用占位符：{name} 人格名，{key} 人格编号 A/B。"
   },
   "switch_lines": {
     "description": "自定义切换台词（仅在「自定义台词」模式下生效）",
     "type": "dict",
-    "hint": "key 为 AstrBot 人格名，value 为该人格的退场语和登场语。",
+    "hint": "key 为 AstrBot 人格 ID，value 为该人格的退场语和登场语。",
     "template_schema": {
       "exit_line": {
         "name": "退场语",
@@ -56,18 +280,28 @@
     "description": "启用自然接管提示",
     "type": "bool",
     "default": true,
-    "hint": "切换后首次 LLM 请求时，自动注入一次性提示，让新人格自然接管对话。"
+    "hint": "切换后首次 LLM 请求时自动注入一次性提示，让新人格自然接管对话。"
+  },
+  "prompt_mode": {
+    "description": "人设与平台提示词的拼装方式",
+    "type": "string",
+    "default": "prepend",
+    "options": [
+      "prepend",
+      "append",
+      "override"
+    ],
+    "labels": [
+      "人格在前（推荐）",
+      "平台规则在前",
+      "只用人格（覆盖平台）"
+    ],
+    "hint": "人格在前：人设优先级高，同时保留平台规则；平台规则在前：更保守但人设会被稀释；只用人格：人设最纯，但会丢掉平台自带的工具与安全规则。"
   },
   "switch_trigger_suffix": {
     "description": "快捷切换指令触发后缀",
     "type": "string",
     "default": "来了",
     "hint": "例如填「来了」，则输入「/人格名来了」或「/人格名 来了」可快捷切换人格。"
-  },
-  "suppress_thought_in_groups": {
-    "description": "群聊中抑制思维链显示",
-    "type": "bool",
-    "default": true,
-    "hint": "开启后，群聊中不再显示思维链（thought）信息，保持简洁"
   }
 }

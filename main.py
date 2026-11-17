@@ -66,7 +66,7 @@ _QUESTION_TAILS = ("吗", "吧", "呢", "么")
 
 # 模型自主切换标记：[[switch:a]] / [[switch:b]]
 _SWITCH_MARKER = re.compile(r"\[\[\s*switch\s*[:：]\s*([abAB])\s*\]\]", re.I)
-PLUGIN_VERSION = "3.1.0"
+PLUGIN_VERSION = "3.1.2"
 
 try:  # astrbot.api.web 只在较新版本提供，缺失时只影响状态面板
     from astrbot.api.web import error_response, json_response, request  # noqa: F401
@@ -291,7 +291,8 @@ class DualPersona(Star):
         changed = st["key"] != key
         st["key"] = key
         if manual:
-            st["manual"] = True
+            # 手动切到 A = 主动放弃锁定；手动切到 B = 锁定 B
+            st["manual"] = key == "b"
         else:
             st["last_auto_ts"] = time.time()
 
@@ -598,16 +599,19 @@ class DualPersona(Star):
         # ---- 1) 强词：显式叫人，直接切（不受数值限制）----
         if self._hit_words(msg, self._strong_words_to_b, strong=True):
             if allowed:
-                logger.debug("[DualPersona] 强词触发 -> 人格 B（重置驻留）")
+                logger.debug("[DualPersona] 强词触发 -> 人格 B（记为手动，重置驻留）")
+                # 强词是用户显式点名：等同于手动选择，不被数值回落赶走
+                st["manual"] = True
                 st["dwell_until"] = time.time() + self._min_dwell if self._min_dwell else 0.0
                 st["satiety"] = float(self._sat_threshold)
                 st["sat_ts"] = time.time()
                 return "b"
         elif self._hit_words(msg, self._strong_words_to_a, strong=True):
             if allowed:
-                logger.debug("[DualPersona] 强词触发 -> 人格 A")
+                logger.debug("[DualPersona] 强词触发 -> 人格 A（解除锁定）")
                 self._reset_satiety(st)
                 st["dwell_until"] = 0.0
+                st["manual"] = False        # 显式叫回 A = 解除锁定，深夜恢复生效
                 return "a"
         else:
             # ---- 2) 弱词：只加分，不直接切 ----
@@ -652,26 +656,40 @@ class DualPersona(Star):
                         f"→ 激发人格 B"
                     )
                     return "b"
-                # ---- 4) 回落：驻留期满且数值低 ----
-                if st["key"] == "b" and not self._in_dwell(st) and value <= self._sat_release:
+                # ---- 4) 回落：驻留期满且数值低（手动选择的不受数值回落影响）----
+                if (
+                    st["key"] == "b"
+                    and not st.get("manual")
+                    and not self._in_dwell(st)
+                    and value <= self._sat_release
+                ):
                     self._reset_satiety(st)
                     logger.info(
                         f"[DualPersona] 情绪回落至 {value:g} 且驻留期满 → 回到人格 A"
                     )
                     return "a"
 
-        # ---- 5) 深夜：不受数值影响 ----
+        # ---- 5) 深夜：手动优先，已在目标人格时什么都不做 ----
         if await self._check_night_time():
             tag = self._current_night_tag()
             if st["night_tag"] != tag:
+                # 只记录「这一夜已处理过」，绝不重置 manual —— 手动选择永久优先
                 st["night_tag"] = tag
-                st["manual"] = False
-            if not st["manual"]:
-                logger.debug(f"[DualPersona] 深夜模式生效，倾向人格 {self._night_target.upper()}")
+            if st["manual"]:
+                logger.debug("[DualPersona] 深夜规则跳过：用户已手动选择人格")
+            elif st["key"] == self._night_target:
+                # 已在目标人格：不碰数值、不设驻留，避免自己触发自己
+                pass
+            else:
+                logger.debug(
+                    f"[DualPersona] 深夜模式生效，倾向人格 {self._night_target.upper()}"
+                )
                 if self._satiety_enabled:
                     st["satiety"] = float(self._sat_threshold)
                     st["sat_ts"] = time.time()
-                    st["dwell_until"] = time.time() + self._min_dwell if self._min_dwell else 0.0
+                    st["dwell_until"] = (
+                        time.time() + self._min_dwell if self._min_dwell else 0.0
+                    )
                 return self._night_target
         return None
 
@@ -694,6 +712,8 @@ class DualPersona(Star):
             try:
                 if st.get("key") != "b":
                     continue
+                if st.get("manual"):
+                    continue        # 手动选定的人格不随时间被赶走
                 if self._in_dwell(st):
                     continue
                 self._decay_satiety(st)
